@@ -1,0 +1,18 @@
+{
+  "name": "prj05",
+  "version": "1.0.0",
+  "description": "learning node.js and redis RESTful API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "basic-auth": "^2.0.0",
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "redis": "^2.8.0"
+  }
+}

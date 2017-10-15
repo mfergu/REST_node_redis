@@ -1,0 +1,135 @@
+<li><strong>Project 5: Nodejs and Redis RESTful API</strong><br><button class="showhide btn" type="button">Show</button><ul class="hidden">
+	<li>Due: Monday 10/23/17 at 8:00 am</li>
+	<li>Worth 80 pts</li>
+	<li>Submission: send me your IP address over slack DM AS WELL AS your nodejs files</li>
+	<li>Requirements:<ul>
+		<li>Run on port 3000</li>
+		<li>Requests require basicAuth header<ul>
+			<li>username: teacher</li>
+			<li>password: t1g3rTester!@#</li>
+			<li>Any request without those credentials in a basicAuth header should get a 401 status code in return</li></ul></li>
+
+		<li>HTTP Status Codes<ul>
+			<li>if successful, 200</li>
+			<li>if forbidden, 401</li>
+			<li>if user error, 400</li>
+			<li>if server error, 500</li>
+			<li>if item not found, 404</li></ul></li>
+
+		<li>Things like this should all throw 404s<ul>
+			<li>PUT /students</li>
+			<li>POST /grades/123</li>
+			<li>DELETE /students</li></ul></li>
+
+		<li>POST /students<ul>
+			<li>add student</li>
+			<li>Should accept a JSON request body
+				<p>{username: "some_username", name: "some user"}</p></li>
+			<li>If no username key, no name key, or no body at all, return 400</li>
+			<li>If username already exists as a student, return a 400</li>
+			<li>if successful return 200 status code with a body containing a reference to the newly created item
+				<p>{"_ref":"/students/cbaker"}</p></li></ul></li>
+		<li>DELETE /students/:username<ul>
+			<li>delete student</li>
+			<li>no request body required</li>
+			<li>if no student exists, return 404</li>
+			<li>if successful, return 200</li>
+			<li>subsiquent requests to GET /students/:username should return a 404</li></ul></li>
+		<li>PATCH /students/:username<ul>
+			<li>modify student</li>
+			<li>should accept a JSON request body
+				<p>{"name":"someone else"}</p></li>
+			<li>should only allow name changes, not username (since thats the key)</li>
+			<li>if try to change username, or no request body, 400</li></ul></li>
+		<li>GET /students/:username<ul>
+			<li>get student</li>
+			<li>should return a 404 if user doesnt exist</li>
+			<li>should return a 200 with content of json user
+				<p>{"username": "cbaker","name": "soneone else", "_ref":"/students/cbaker"}</p></li>
+			<li>no queries params here</li></ul></li>
+		<li>GET /students<ul>
+			<li>get all students</li>
+			<li>should return a JSON array.  if students don't exist, still return a status 200 with []</li>
+			<li>otherwise, return a indexed array of user objects
+				<p>[
+					{"username": "cbaker","name": "soneone else", "_ref":"/students/cbaker"},
+					{"username": "cbaker1","name": "soneone else", "_ref":"/students/cbaker1"},
+					{"username": "cbaker2","name": "soneone else", "_ref":"/students/cbaker2"}
+				]</p></li></ul></li>
+		<li>POST /grades<ul>
+			<li>add grade</li>
+			<li>Should accept a JSON request body
+				<p>{
+					"username": "some_username",
+					"type": "quiz",
+					"max": "12",
+					"grade": "12"
+				}</p></li>
+			<li>If any of the 4 keys are missing, or no body at all, return 400</li>
+			<li>if successful return 200 status code with a body containing a reference to the newly created item
+				<p>{"_ref":"/grades/2"}</p></li>
+			<li>Doesn't need to care if student doesn't exist, make item anyway</li></ul></li>
+		<li>GET /grades/:gradeid<ul>
+			<li>get grade</li>
+			<li>should return a 404 if gradeid doesn't exist</li>
+			<li>should return a 200 with a full grade object and _ref
+				<p>{
+					"username": "some_username",
+					"type": "quiz",
+					"max": "12",
+					"grade": "12",
+					"_ref": "/grades/2"
+				}</p></li></ul></li>
+		<li>PATCH /grades/:gradeid<ul>
+			<li>modify grade</li>
+			<li>should return a 404 if gradeid doesn't exist</li>
+			<li>should return a 400 if request body is missing, or if no keys exist in the hash</li>
+			<li>should expect a hashed array of values to change
+				<p>{
+					"max": "11",
+					"grade": "13"
+				}</p></li>
+			<li>should only accept changes for max, grade, type and username</li>
+			<li>if change(s) successful, return a 200 with no body necessary</li></ul></li>
+		<li>DELETE /grades/:gradeid<ul>
+			<li>delete grade</li>
+			<li>should return a 404 if gradeid doesn't exist</li>
+			<li>should return a 200 if successfully deleted</li></ul></li>
+		<li>GET /grades<ul>
+			<li>return a list of all grades, possibly sorted based on 1 and/or two query parameters</li>
+			<li>if no grades exist, return a 200 with a body of []</li>
+			<li>if grades exist and no GET parameter queries were submitted, return a 200 with a list of all grade objects
+				<p>[
+					{
+						"username": "some_username",
+						"type": "quiz",
+						"max": "12",
+						"grade": "12",
+						"_ref": "/grades/2"
+					},
+					{
+						"username": "some_username1",
+						"type": "quiz",
+						"max": "121",
+						"grade": "12",
+						"_ref": "/grades/3"
+					}
+				]</p></li>
+			<li>should accept query parameters username and type<ul>
+				<li>GET /grades?username=rusername<ul>
+					<li>filters list down to only grades matching given username</li></ul></li>
+				<li>GET /grades?type=quiz<ul>
+					<li>filters list down to only grades matching given type</li></ul></li>
+				<li>GET /grades?username=rusername&type=quiz<ul>
+					<li>filters list down to only grades matching given username AND type</li></ul></li></ul></li></ul>
+		<li>DELETE /db<ul>
+			<li>should blow away entire database of all data</li>
+			<li>should return a 200 with no response body</li></ul></li></li></ul>
+		<li>Grading 80 pts<ul>
+			<li>students api: 20 pts</li>
+			<li>grades api:    40 pts</li>
+			<li>basic auth protection: 5 pts</li>
+			<li>delete database: 5 pts</li>
+			<li>no crashes, clean code: 5 pts</li>
+			<li>proper use of http status codes: 5 pts</li></ul></li>
+		<li>Graded using <a href="examples/Project-5-API.postman_collection.json">this collection</a> in <a href="https://www.getpostman.com">postman</a></li></li></ul>
