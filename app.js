@@ -234,7 +234,7 @@ app.post('/grades', authr, function ( req, res) {
 			//hget username worked
 			var id;
 			id = vals;
-			client.hmsetAsync(username,["type", type, "max", max, "grade", grade, "_ref","/grades/"+id ).then( function ( contents){
+			client.hmsetAsync(id,["type", type, "max", max, "grade", grade, "_ref","/grades/"+id]).then( function ( contents){
 				console.log(" [ "+id+ " ] getting numgrades from database");
 				res.status(200).json({"username":username, "type": type, "max":max, "grade":grade, "_ref":"/grades/"+id});
 			}).catch( function (error){
@@ -249,15 +249,40 @@ app.post('/grades', authr, function ( req, res) {
 // get a grade in the database
 app.get('/grades/:gradeid', authr, function ( req, res) {
 	var gradeid = req.params.gradeid;
-	client.
+	client.hgetallAsync(gradeid).then( function (contents){
+		console.log(contents);
+		res.status(200).json(contents);
+	}).catch( function( error){
+	});
 	console.log('get a grade');
-	res.send('hella world!');
 });
 
 // modifies a grade in the database
 app.patch('/grades/:gradeid', authr, function ( req, res) {
-	console.log('modifying a grade in the database');
-	res.send('hella world!');
+	var gradeid = req.params.gradeid,
+	max = req.body.max,
+	grade = req.body.grade,
+	type = req.body.type,
+	username = req.body.username,
+	update = {};
+	if( max){
+		update["max"] = max;	
+	}
+       	if( grade){
+		update["grade"] = grade;	
+	}
+	if( type){
+		update["type"] = type;	
+	}
+	if( username){
+		update["username"] = username;	
+	}
+	console.log(update);
+	client.hmsetAsync( gradeid, update).then( function (contents){
+		res.status(200).json(JSON.stringify(update));
+	}).catch( function( error){
+		console.log(" [ ERROR ] patching grade");
+	});
 });
 
 // deletes a grade in the database
@@ -268,8 +293,42 @@ app.delete('/grades/:gradeid', authr, function ( req, res) {
 
 // returns a list of all the grades
 app.get('/grades', authr, function ( req, res) {
-	console.log('getting all the grades');
-	res.send('hella world!');
+
+	var all_grades = {};
+	client.getAsync("numgrades").then( function (contents) {
+		for(var i = 1; i <= contents; i++){
+			client.hgetallAsync(i).then( function (json_data){
+				all_grades[i] = json_data;
+			}).catch( function (error){
+				console.log('[ ' + error + ' ] getting grade contents');
+			});
+		}
+	}).catch( function (error){
+		console.log('[ '+error+' ] getting num of grades ');
+	});
+	var uname = req.params.username,
+	type = req.params.type;
+	if(Object.keys(all_grades).length < 1){
+		res.status(200).send([]);
+		return;
+	}
+	console.log( uname + " XxX " + type);
+	if(!uname && !type){
+		res.status(200).json(JSON.stringify(all_grades));
+	}
+	var queried=[];
+	if(uname && type){
+		for(var i = 0; i < all_grades.length(); i++){
+			if( all_grades[i].username == uname && all_grades[i].type == type){
+				queried.push(all_grades[i]);
+			}
+		} 
+		res.status(200).json(JSON.stringify(queried));
+	}
+	if(uname){
+	}
+	if(type){
+	}
 });
 
 // drop table
