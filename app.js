@@ -230,18 +230,18 @@ app.post('/grades', authr, function ( req, res) {
 	if(!ready){
 		res.status(400).send('missing something when trying to add a grade to grades');
 	} else {
-		client.hmsetAsync(username,["type", type, "max", max, "grade", grade] ).then( function ( contents){
+		client.incrAsync("numgrades").then( function (vals) {
 			//hget username worked
 			var id;
-			client.incrAsync("numgrades").then( function (vals) {
-				id = vals;
+			id = vals;
+			client.hmsetAsync(username,["type", type, "max", max, "grade", grade, "_ref","/grades/"+id ).then( function ( contents){
 				console.log(" [ "+id+ " ] getting numgrades from database");
 				res.status(200).json({"username":username, "type": type, "max":max, "grade":grade, "_ref":"/grades/"+id});
 			}).catch( function (error){
-				console.log(" [ ERROR] getting numgrades from database");
 			});
 		}).catch( function (error) {
 			//hget username did not work
+			console.log(" [ ERROR] getting numgrades from database");
 		});	
 	}
 });
