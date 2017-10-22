@@ -67,16 +67,16 @@ app.post('/students', authr, function ( req, res) {
 		res.status(400).send('missing username or name');
 	} else {
 		//use bluebirded asynch redis set of a student
-		client.sismemberAsync("students", username ).then( function (contents) {
+		client.sismemberAsync("usernames", username ).then( function (contents) {
 			if(!contents){
 				new_student = true;
 			}	
 			if( new_student) {
-				client.saddAsync("students", req.body.username, req.body.name ).then( function(contents) {
-					console.log(" [ " + contents + "  ] adding student to the database");
+				client.saddAsync("usernames", req.body.username ).then( function(contents) {
+					console.log(" [ " + contents + "  ] adding student to the username database");
 					res.status(200).json( {_ref : "/students/" + username });
 				}).catch( function (error) {
-					console.log(" [ " + error + " ] adding student to the database");
+					console.log(" [ " + error + " ] adding student to the name database");
 				});
 			} else {
 				console.log(" [ " + true + "] student already exists in the database");
@@ -96,10 +96,10 @@ app.delete('/students/:username', authr,function ( req, res) {
 		//username DNE
 		res.status(400).send('missing username');
 	} else {
-		client.sismemberAsync("students", username).then( function (contents) {
+		client.sismemberAsync("usernames", username).then( function (contents) {
 			//hexist returned contents
 			if(contents){
-				client.sremAsync( "students", username).then( function (contents) {
+				client.sremAsync( "usernames", username).then( function (contents) {
 					//hdel returned contents
 					console.log(" [ " + contents + "  ] removing student from the database");
 					res.status(200).send(username + " removed from the table");
@@ -124,16 +124,20 @@ app.get('/students/:username', authr,function ( req, res) {
 		//username DNE
 		res.status(400).send('missing username');
 	} else {
-		client.hexistsAsync("students", username).then( function (contents) {
+		client.sismemberAsync("usernames", username).then( function (contents) {
 			//hexist returned contents
 			if(contents){
-				client.sremAsync( "students", username).then( function (contents) {
-					//hdel returned contents
-					console.log(" [ " + username + "  ] getting student from the database");
+				client.sremAsync( "usernames", username).then( function (contents) {
+					//srem returned contents
+					console.log(" [ " + username + "  ] getting student from the set");
+					client.saddAsync("usernames", username).then( function (contents){
+					}).catch( function (error) {
+						console.log(" [ " + error + " ] adding username back to set");
+					});
 					res.status(200).json( {"username": username, "name": contents, "_ref": "/students/"+ username});
 				}).catch( function ( error) {
 					//error with hget call
-					console.log(" [ " + error + " ] getting student in the database");
+					console.log(" [ " + error + " ] removing username from set");
 				});
 			} else {
 				console.log(" [ ERROR ] student does not exist in the database");
@@ -149,10 +153,14 @@ app.get('/students/:username', authr,function ( req, res) {
 // returns all students
 app.get('/students', authr, function ( req, res) {
 
-	client.smembersAsync("students").then( function ( contents) {
+	client.smembersAsync("usernames").then( function ( contents) {
 		if(contents){
 			console.log(" [ OK   ] getting all students");
-			res.status(200).json( contents);
+			var un_data = [];
+			for( var i = 0; i< contents.length; i++){
+				un_data[i] = {"username": contents[i], "_ref": "/students/"+contents[i]};
+			}
+			res.status(200).json( un_data);
 			return;
 		} else {
 			console.log(" [ OK   ] getting all students");
@@ -167,12 +175,12 @@ app.get('/students', authr, function ( req, res) {
 
 app.patch('/students/:username', authr,function ( req, res) {
 	var username = req.params.username;
-	client.smemberAsync("students", username).then( function ( contents) {
+	client.sismemberAsync("usernames", username).then( function ( contents) {
 		if(contents){
 			// username exists in the table
 			if(!req.body.username){
 				//param username should be used
-				client.saddAsync("students", username, req.body.name).then( function ( contents) {
+				client.saddAsync("usernames", username).then( function ( contents) {
 					//hset worked 
 					console.log("[ OK  ] 1/1 patching student");
 					res.status(200).send(' student updated');
@@ -197,6 +205,12 @@ app.patch('/students/:username', authr,function ( req, res) {
 		res.status(404).send(' student patch');
 	});
 });
+
+client.setAsync("numgrades", "0").then( function (results){
+	console.log(" [ OK   ] created the number of grades");
+}).catch( function (error){
+	console.log(" [ ERROR] creating the number of grades");
+});
 // adds a new grade to the database
 app.post('/grades', authr, function ( req, res) {
 	var ready = 1,
@@ -214,10 +228,18 @@ app.post('/grades', authr, function ( req, res) {
 		ready = 0;
 	}
 	if(!ready){
-		res.status(400).send('missing something');
+		res.status(400).send('missing something when trying to add a grade to grades');
 	} else {
-		client.hgetAsync("grades", username).then( function ( contents){
+		client.hmsetAsync(username,["type", type, "max", max, "grade", grade] ).then( function ( contents){
 			//hget username worked
+			var id;
+			client.incrAsync("numgrades").then( function (vals) {
+				id = vals;
+				console.log(" [ "+id+ " ] getting numgrades from database");
+				res.status(200).json({"username":username, "type": type, "max":max, "grade":grade, "_ref":"/grades/"+id});
+			}).catch( function (error){
+				console.log(" [ ERROR] getting numgrades from database");
+			});
 		}).catch( function (error) {
 			//hget username did not work
 		});	
@@ -226,6 +248,8 @@ app.post('/grades', authr, function ( req, res) {
 
 // get a grade in the database
 app.get('/grades/:gradeid', authr, function ( req, res) {
+	var gradeid = req.params.gradeid;
+	client.
 	console.log('get a grade');
 	res.send('hella world!');
 });
